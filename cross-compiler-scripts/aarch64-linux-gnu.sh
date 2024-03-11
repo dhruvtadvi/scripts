@@ -29,5 +29,16 @@ for download_links in ${DOWNLOAD_SOURCES[@]}; do
 	fi
 done
 
+build_binutils() {
+	cd binutils-*
+	if [ -d build ]; then rm -rf build; fi
+	mkdir build && cd build
+	../configure --prefix=$BUILD_DIR \
+		--target=$TARGET \
+		--disable-multilib
 
+	make -j$JOBS
+	make install
+}
 
+build_binutils
