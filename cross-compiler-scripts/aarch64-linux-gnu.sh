@@ -38,13 +38,30 @@ build_binutils() {
 		--disable-multilib
 
 	make -j$JOBS
-	make install
+	make install -j$JOBS
+	cd ../..
 }
 
 build_kernel_headers() {
 	cd linux-*
 	make ARCH=arm64 INSTALL_HDR_PATH=$BUILD_DIR/$TARGET/usr headers_install
+	cd ..
+}
+
+build_gcc() {
+	cd gcc-*
+	if [ -d build ]; then rm -rf build; fi
+	mkdir build && cd build
+	../configure --prefix=$BUILD_DIR \
+		--target=$TARGET \
+		--disable-multilib \
+		--enable-languages=c,c++
+
+	make all-gcc -j$JOBS
+	make install-gcc -j$JOBS
+	cd ../..
 }
 
 build_binutils
 build_kernel_headers
+build_gcc
