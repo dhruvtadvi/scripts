@@ -41,4 +41,10 @@ build_binutils() {
 	make install
 }
 
+build_kernel_headers() {
+	cd linux-*
+	make ARCH=arm64 INSTALL_HDR_PATH=$BUILD_DIR/$TARGET/usr headers_install
+}
+
 build_binutils
+build_kernel_headers
