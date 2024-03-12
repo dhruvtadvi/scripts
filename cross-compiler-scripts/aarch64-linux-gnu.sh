@@ -44,9 +44,10 @@ build_binutils() {
 
 build_kernel_headers() {
 	cd linux-*
-	make ARCH=arm64 INSTALL_HDR_PATH=$BUILD_DIR/$TARGET/usr headers_install
+	make ARCH=arm64 INSTALL_HDR_PATH=$BUILD_DIR/$TARGET headers_install
 	cd ..
 }
+
 
 build_gcc() {
 	cd gcc-*
@@ -55,6 +56,7 @@ build_gcc() {
 	../configure --prefix=$BUILD_DIR \
 		--target=$TARGET \
 		--disable-multilib \
+		--disable-libsanitizer \
 		--enable-languages=c,c++
 
 	make all-gcc -j$JOBS
@@ -62,6 +64,46 @@ build_gcc() {
 	cd ../..
 }
 
+
+build_glibc() {
+	cd glibc-*
+	if [ -d build ]; then rm -rf build;fi
+	mkdir build -p
+	cd build
+
+	../configure \
+		--prefix=$BUILD_DIR/$TARGET \
+		--build=$MACHTYPE \
+		--host=$TARGET \
+		--target=$TARGET \
+		--disable-multilib \
+		--with-headers=$BUILD_DIR/$TARGET/include \
+		libc_cv_forced_unwind=yes
+
+	make install-bootstrap-headers=yes install-headers
+	make csu/subdir_lib -j$JOBS
+	install csu/crt1.o csu/crti.o csu/crtn.o $BUILD_DIR/$TARGET/lib
+	$TARGET-gcc -nostdlib -nostartfiles -shared -x c /dev/null -o $BUILD_DIR/$TARGET/lib/libc.so
+	touch $BUILD_DIR/$TARGET/include/gnu/stubs.h
+	cd ../..
+
+	cd gcc-*/build
+	make all-target-libgcc -j$JOBS
+	make install-target-libgcc
+	cd ../..
+
+	cd glibc-*/build
+	make -j$JOBS
+	make install
+	cd ../..
+
+	cd gcc-*/build
+	make -j$JOBS
+	make install
+	cd ../..
+}
+
 build_binutils
 build_kernel_headers
 build_gcc
+build_glibc
