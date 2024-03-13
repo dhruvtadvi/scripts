@@ -51,6 +51,7 @@ build_kernel_headers() {
 
 build_gcc() {
 	cd gcc-*
+	./contrib/download_prerequisites
 	if [ -d build ]; then rm -rf build; fi
 	mkdir build && cd build
 	../configure --prefix=$BUILD_DIR \
